@@ -41,3 +41,26 @@ $serialNumber = (Get-WmiObject -Class "Win32_BIOS").SerialNumber
 $hardwareId = (Get-WmiObject -Class "Win32_ComputerSystemProduct").UUID
 
 # Maak de Autopilot-profiel payload
+$autopilotPayload = @{
+    "@odata.type"              = "#microsoft.graph.importedWindowsAutopilotDeviceIdentity"
+    "orderIdentifier"          = "CustomOrderIdentifier"
+    "serialNumber"             = $serialNumber
+    "productKey"               = $hardwareId
+    "importedDeviceIdentifier" = "CustomDeviceIdentifier"
+}
+
+# Converteer de payload naar JSON
+$autopilotPayloadJson = $autopilotPayload | ConvertTo-Json
+
+# API URL voor het toevoegen van het apparaat aan Autopilot
+$autopilotApiUrl = "https://graph.microsoft.com/beta/deviceManagement/importedWindowsAutopilotDeviceIdentities"
+
+# Voeg het apparaat toe aan Autopilot via de Graph API
+try {
+    $response = Invoke-RestMethod -Method Post -Uri $autopilotApiUrl -ContentType "application/json" -Headers @{Authorization = "Bearer $accessToken"} -Body $autopilotPayloadJson
+    Write-Host "Het apparaat is succesvol toegevoegd aan Autopilot."
+} catch {
+    Write-Host "Er is een fout opgetreden bij het toevoegen van het apparaat aan Autopilot:"
+    Write-Host $_.Exception.Response.StatusCode.value__
+    Write-Host $_.Exception.Message
+}
